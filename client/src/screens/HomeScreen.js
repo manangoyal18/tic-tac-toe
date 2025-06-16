@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { BackHandler } from 'react-native';
 import Button from '../components/Button';
 
 export default function HomeScreen({ navigation }) {
@@ -10,17 +11,19 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.buttonContainer}>
         <Button 
           title="ONE PLAYER" 
-          onPress={() => navigation.navigate('SinglePlayer')} 
+          onPress={() => navigation.navigate('SinglePlayerLevels')}  // ✅ must match navigator key
         />
         <Button 
           title="TWO PLAYERS" 
-          onPress={() => navigation.navigate('MultiPlayer')} 
+          onPress={() => navigation.navigate('TwoPlayersType')} // ✅ must match navigator key
         />
         <Button 
           title="EXIT" 
-          onPress={() => console.log('Exit pressed')} 
+           onPress={() => { 
+           console.log('Exit pressed');
+           BackHandler.exitApp();}} 
           style={styles.exitButton}
-        />
+/>
       </View>
     </View>
   );
