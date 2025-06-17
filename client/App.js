@@ -12,6 +12,7 @@ import Medium from './src/screens/Medium';
 import bg from './assets/bg.jpeg';
 import TwoPlayersLocal from './src/screens/TwoPlayersLocal';
 import TwoPlayersType from './src/screens/TwoPlayersType';
+import OnlineGame from './src/screens/OnlineGame';
 
 const Stack = createNativeStackNavigator();
 
@@ -26,7 +27,7 @@ export default function App() {
           <Stack.Screen name="Medium" component={Medium} />
           <Stack.Screen name="TwoPlayersType" component={TwoPlayersType} />
           <Stack.Screen name="TwoPlayersLocal" component={TwoPlayersLocal} />
-      
+           <Stack.Screen name="OnlineGame" component={OnlineGame} />
         </Stack.Navigator>
       </NavigationContainer>
     </ImageBackground>

@@ -8,8 +8,8 @@ export default function TwoPlayersType({ navigation }) {
       <Text style={styles.title}>Select Game Type</Text>
       <View style={styles.buttonContainer}>
         <Button title="LOCAL" onPress={() => navigation.navigate('TwoPlayersLocal')} />
-        <Button title="Online" onPress={() => navigation.navigate('Online')} />
-       {/* <Button title="BACK" onPress={() => navigation.goBack()} /> */}
+        <Button title="Online" onPress={() => navigation.navigate('OnlineGame')} />
+        <Button title="BACK" onPress={() => navigation.goBack()} />
       </View>
     </View>
   );
