@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, Alert, StyleSheet, ImageBackground } from 'react-native';
 import bg from '../../assets/bg.jpeg';
 import Cell from '../components/Cell';
-import { io } from 'socket.io-client'; // Or use a WebSocket fallback
+//import { io } from 'socket.io-client'; // Or use a WebSocket fallback
 
 const emptyMap = [["", "", ""], ["", "", ""], ["", "", ""]];
 
