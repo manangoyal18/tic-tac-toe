@@ -1,4 +1,3 @@
-%% src/websocket_handler.erl
 -module(websocket_handler).
 -behaviour(cowboy_websocket).
 
@@ -7,6 +6,8 @@
 -export([websocket_handle/2]).
 -export([websocket_info/2]).
 -export([terminate/3]).
+
+-include("tic_tac_toe.hrl").
 
 init(Req, Opts) ->
     {cowboy_websocket, Req, Opts}.
@@ -52,13 +53,16 @@ websocket_handle({text, Msg}, {GamePid, Symbol} = State) ->
                     {game_over, _} ->
                         % Game over, we'll get notified via websocket_info
                         ok
-                end;
+                end,
+                {ok, State};        
             <<"reset">> ->
                 % For simplicity, we'll just disconnect and let the client reconnect
                 % In a real app, you'd implement proper game reset logic
-                {stop, State}
-        end,
-        {ok, State}
+                  % {stop, normal, State}
+                    gen_server:cast(GamePid, reset),
+                    {ok, State}
+        end
+        %{ok, State}
     catch _:_ ->
         error_logger:error_msg("Invalid message format: ~p", [Msg]),
         {ok, State}

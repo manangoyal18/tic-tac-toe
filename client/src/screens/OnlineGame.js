@@ -15,7 +15,10 @@ export default function OnlineGame() {
   useEffect(() => {
     // Connect to Erlang backend (assuming WebSocket server on port 8080)
     //socketRef.current = new WebSocket('ws://<YOUR_SERVER_IP>:8080');
-    socketRef.current = new WebSocket('ws://localhost:8080');
+   // socketRef.current = new WebSocket('ws://localhost:8080');
+   // socketRef.current = new WebSocket('ws://172.0.10.38:8080');
+   // socketRef.current = new WebSocket('ws://172.0.10.38:8080/websocket');
+    socketRef.current = new WebSocket('ws://10.0.2.2:8080/websocket');
 
 
     socketRef.current.onopen = () => {
