@@ -26,7 +26,7 @@ start(_StartType, _StartArgs) ->
     %    [{port, Port}],
     %    #{env => #{dispatch => Dispatch}}
     %),
-    {ok, _} = cowboy:start_clear(http, [{port, Port}, {ip, {0,0,0,0}}], #{
+    {ok, _} = cowboy:start_clear(tic_tac_toe_http_listener, [{port, Port}, {ip, {0,0,0,0}}], #{
     env => #{dispatch => Dispatch}
 }),
     
