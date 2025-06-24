@@ -16,8 +16,8 @@ export default function OnlineGame() {
     // Connect to Erlang backend (assuming WebSocket server on port 8080)
     //socketRef.current = new WebSocket('ws://<YOUR_SERVER_IP>:8080');
    // socketRef.current = new WebSocket('ws://localhost:8080');
-   // socketRef.current = new WebSocket('ws://172.0.10.38:8080');
-    socketRef.current = new WebSocket('ws://172.0.10.38:8080/websocket');
+   socketRef.current = new WebSocket('ws://172.0.10.38:8080/websocket');
+   // socketRef.current = new WebSocket('ws://172.0.10.38:8080/websocket');
    // socketRef.current = new WebSocket('ws://10.0.2.2:8080/websocket');
 
 
@@ -27,6 +27,9 @@ export default function OnlineGame() {
 
     socketRef.current.onmessage = (message) => {
       const data = JSON.parse(message.data);
+     // console.log("Received from server:", data);
+     console.log("Received from server:", JSON.stringify(data, null, 2));
+
 
       if (data.type === 'assign_symbol') {
         setPlayerSymbol(data.symbol);
@@ -70,6 +73,7 @@ export default function OnlineGame() {
       symbol: playerSymbol,
     };
 
+     console.log("Sending move:", payload);
     socketRef.current.send(JSON.stringify(payload));
   };
 

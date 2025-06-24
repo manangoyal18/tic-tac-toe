@@ -148,10 +148,11 @@ is_board_full(Board) ->
 
 notify_players(State = #game_state{player_x = PidX, player_o = PidO}) ->
     JsonState = jsone:encode(#{
-        type => "game_state",
-        board => State#game_state.board,
-        turn => State#game_state.turn
+        <<"type">> => <<"game_state">>,
+        <<"board">> => State#game_state.board,
+        <<"turn">> => list_to_binary(State#game_state.turn)
     }),
+    io:format("[game_session] Notifying players of new state: ~p~n", [JsonState]),
     if is_pid(PidX) -> PidX ! {send, JsonState}; true -> ok end,
     if is_pid(PidO) -> PidO ! {send, JsonState}; true -> ok end.
 
@@ -162,8 +163,9 @@ notify_game_over(State, Result) ->
         draw -> "It's a draw!"
     end,
     JsonResult = jsone:encode(#{
-        type => "game_result",
-        result => ResultStr
+        <<"type">> => <<"game_result">>,
+        <<"result">> => list_to_binary(ResultStr)
     }),
+    io:format("[game_session] Game result: ~s~n", [ResultStr]),
     if is_pid(State#game_state.player_x) -> State#game_state.player_x ! {send, JsonResult}; true -> ok end,
     if is_pid(State#game_state.player_o) -> State#game_state.player_o ! {send, JsonResult}; true -> ok end.
