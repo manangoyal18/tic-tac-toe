@@ -6,6 +6,7 @@
 
 -export([start_link/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
+-export([print_board/1, notify_reset/1]).
 
 % Client API
 start_link() ->
@@ -14,7 +15,10 @@ start_link() ->
 % Server callbacks
 init([]) ->
     InitialState = #game_state{
-        board = [["", "", ""], ["", "", ""], ["", "", ""]],
+        %board = [["", "", ""], ["", "", ""], ["", "", ""]],
+        board = [["empty", "empty", "empty"],
+                 ["empty", "empty", "empty"],
+                 ["empty", "empty", "empty"]],
         turn = "x",
         player_x = undefined,
         player_o = undefined
@@ -60,23 +64,73 @@ handle_call({make_move, Row, Col, Symbol}, _From, State = #game_state{turn = Tur
 handle_call(get_state, _From, State) ->
     {reply, {ok, State}, State};
 
-handle_call(_Request, _From, State) ->
+handle_call(info, _From, State) ->
+    io:format("Current board:~n"),
+    print_board(State#game_state.board),
+    io:format("Turn: ~p~n", [State#game_state.turn]),
+    io:format("Player X: ~p~n", [State#game_state.player_x]),
+    io:format("Player O: ~p~n", [State#game_state.player_o]),
     {reply, ok, State}.
 
-handle_cast(_Msg, State) ->
-    {noreply, State}.
+
+%handle_cast(_Msg, State) ->
+%    {noreply, State}.
+
+handle_cast(reset, State) ->
+   % io:format("[game_session] Game reset requested~n"),
+    notify_reset(State), 
+    NewState = #game_state{
+        %board = [["", "", ""], ["", "", ""], ["", "", ""]],
+        board = [["empty", "empty", "empty"],
+                 ["empty", "empty", "empty"],
+                 ["empty", "empty", "empty"]],
+        turn = "x",
+        player_x = undefined,
+        player_o = undefined
+    },
+    
+    {noreply, NewState}.
+
+
+%handle_info({'DOWN', _Ref, process, Pid, _Reason}, State) ->
+%    % Handle player disconnection
+%    NewState = case State of
+%        #game_state{player_x = Pid} -> State#game_state{player_x = undefined};
+%        #game_state{player_o = Pid} -> State#game_state{player_o = undefined};
+%        _ -> State
+%    end,
+%    {noreply, NewState};
 
 handle_info({'DOWN', _Ref, process, Pid, _Reason}, State) ->
-    % Handle player disconnection
+    % Identify and remove the disconnected player
     NewState = case State of
         #game_state{player_x = Pid} -> State#game_state{player_x = undefined};
         #game_state{player_o = Pid} -> State#game_state{player_o = undefined};
         _ -> State
     end,
-    {noreply, NewState};
 
-handle_info(_Info, State) ->
-    {noreply, State}.
+    % Notify remaining player of disconnection
+    OtherPid = case {State#game_state.player_x, State#game_state.player_o} of
+        {Pid, Other} when is_pid(Other) -> Other;
+        {Other, Pid} when is_pid(Other) -> Other;
+        _ -> undefined
+    end,
+
+    case is_pid(OtherPid) of
+        true ->
+            Msg = jsone:encode(#{
+                <<"type">> => <<"game_result">>,
+                <<"result">> => <<"Opponent disconnected! You win!">>
+            }),
+            OtherPid ! {send, Msg};
+        false -> ok
+    end,
+
+    {noreply, NewState}.
+
+
+%handle_info(_Info, State) ->
+ %   {noreply, State}.
 
 terminate(_Reason, _State) ->
     ok.
@@ -86,16 +140,25 @@ code_change(_OldVsn, State, _Extra) ->
 
 % Helper functions
 make_move_if_valid(Row, Col, Symbol, State = #game_state{board = Board}) ->
-    CurrentCell = lists:nth(Row+1, lists:nth(Col+1, Board)),
+   % CurrentCell = lists:nth(Row+1, lists:nth(Col+1, Board)),
+    CurrentRow = lists:nth(Row + 1, Board),
+    CurrentCell = lists:nth(Col + 1, CurrentRow),
     if
         CurrentCell =/= "" ->
             {error, cell_occupied};
         true ->
             % Update the board
-            NewRow = lists:sublist(Board, Row) ++ 
-                     [set_element(Col+1, lists:nth(Row+1, Board), Symbol)] ++ 
-                     lists:nthtail(Row+1, Board),
-            NewBoard = lists:sublist(Board, Row) ++ [NewRow] ++ lists:nthtail(Row+1, Board),
+            %NewRow = lists:sublist(Board, Row) ++ 
+            %         [set_element(Col+1, lists:nth(Row+1, Board), Symbol)] ++ 
+            %         lists:nthtail(Row+1, Board),
+            %NewBoard = lists:sublist(Board, Row) ++ [NewRow] ++ lists:nthtail(Row+1, Board),
+           % OldRow = lists:nth(Row + 1, Board),
+           % UpdatedRow = set_element(Col + 1, OldRow, Symbol),
+           % NewBoard = set_element(Row + 1, Board, UpdatedRow),
+            UpdatedRow = set_element(Col + 1, CurrentRow, Symbol),
+            NewBoard = set_element(Row + 1, Board, UpdatedRow),
+
+
             NewTurn = case Symbol of "x" -> "o"; "o" -> "x" end,
             {ok, State#game_state{board = NewBoard, turn = NewTurn}}
     end.
@@ -169,3 +232,21 @@ notify_game_over(State, Result) ->
     io:format("[game_session] Game result: ~s~n", [ResultStr]),
     if is_pid(State#game_state.player_x) -> State#game_state.player_x ! {send, JsonResult}; true -> ok end,
     if is_pid(State#game_state.player_o) -> State#game_state.player_o ! {send, JsonResult}; true -> ok end.
+
+print_board(Board) ->
+    lists:foreach(fun(Row) ->
+        RowStr = lists:join(" | ", Row),
+        io:format("~s~n", [RowStr])
+    end, Board).
+
+notify_reset(#game_state{player_x = PidX, player_o = PidO}) ->
+    Msg = jsone:encode(#{
+        <<"type">> => <<"game_result">>,
+        <<"result">> => <<"Game has been reset">>
+    }),
+    io:format("[game_session] Notifying reset~n"),
+    % For simplicity we don't send to specific PIDs here because reset clears players
+    if is_pid(PidX) -> PidX ! {send, Msg}; true -> ok end,
+    if is_pid(PidO) -> PidO ! {send, Msg}; true -> ok end.
+    
+

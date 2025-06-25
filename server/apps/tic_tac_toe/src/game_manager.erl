@@ -25,8 +25,9 @@ handle_call(new_player, _From, State) ->
     % Find a game waiting for a player or start a new one
     case find_waiting_game(State) of
         {ok, GamePid} ->
-            % Assign player to existing game
-            {reply, {ok, GamePid, "o"}, State};
+            % Assign player to existing 
+             NewState = maps:remove(GamePid, State), % no longer waiting
+             {reply, {ok, GamePid, "o"}, NewState};
         none ->
             % Start new game and assign as player X
             {ok, GamePid} = game_session:start_link(),
