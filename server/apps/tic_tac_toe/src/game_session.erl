@@ -81,15 +81,25 @@ handle_cast(reset, State) ->
     notify_reset(State), 
     NewState = #game_state{
         %board = [["", "", ""], ["", "", ""], ["", "", ""]],
-        board = [["empty", "empty", "empty"],
-                 ["empty", "empty", "empty"],
-                 ["empty", "empty", "empty"]],
+        %board = [["empty", "empty", "empty"],["empty", "empty", "empty"],["empty", "empty", "empty"]],
+        %board = [[<<"">>, <<"">>, <<"">>], [<<"">>, <<"">>, <<"">>], [<<"">>, <<"">>, <<"">>]],
+         board = [[<<>>, <<>>, <<>>], [<<>>, <<>>, <<>>], [<<>>, <<>>, <<>>]],
+
         turn = "x",
         player_x = undefined,
         player_o = undefined
     },
     
+    {noreply, NewState};
+
+handle_cast({player_disconnected, Pid}, State = #game_state{player_x = PidX, player_o = PidO}) ->
+    NewState = case Pid of
+        PidX -> State#game_state{player_x = undefined};
+        PidO -> State#game_state{player_o = undefined};
+        _ -> State
+    end,
     {noreply, NewState}.
+
 
 
 %handle_info({'DOWN', _Ref, process, Pid, _Reason}, State) ->
@@ -144,7 +154,7 @@ make_move_if_valid(Row, Col, Symbol, State = #game_state{board = Board}) ->
     CurrentRow = lists:nth(Row + 1, Board),
     CurrentCell = lists:nth(Col + 1, CurrentRow),
     if
-        CurrentCell =/= "" ->
+        CurrentCell =/= <<>> ->
             {error, cell_occupied};
         true ->
             % Update the board
@@ -158,6 +168,7 @@ make_move_if_valid(Row, Col, Symbol, State = #game_state{board = Board}) ->
             UpdatedRow = set_element(Col + 1, CurrentRow, Symbol),
             NewBoard = set_element(Row + 1, Board, UpdatedRow),
 
+        io:format("Checking cell ~p at ~p,~p~n", [CurrentCell, Row, Col]),
 
             NewTurn = case Symbol of "x" -> "o"; "o" -> "x" end,
             {ok, State#game_state{board = NewBoard, turn = NewTurn}}

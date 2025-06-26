@@ -55,13 +55,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    position: "relative", // ✅ Needed for absolute children
-    backgroundColor: "rgba(255,0,0,0.2)", // debug
+   // position: "relative", // ✅ Needed for absolute children
+    margin: 10,
+   // backgroundColor: "rgba(255,0,0,0.2)", // debug
   },
   line: {
     position: "absolute",
     width: 10,
-    height: 60,
+    height: 100,
     backgroundColor: "white",
     borderRadius: 5,
   },
