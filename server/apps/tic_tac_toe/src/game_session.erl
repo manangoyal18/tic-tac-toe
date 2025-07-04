@@ -16,14 +16,17 @@ start_link() ->
 init([]) ->
     InitialState = #game_state{
         %board = [["", "", ""], ["", "", ""], ["", "", ""]],
-        board = [["empty", "empty", "empty"],
-                 ["empty", "empty", "empty"],
-                 ["empty", "empty", "empty"]],
-        turn = "x",
+        board = [[<<>>, <<>>, <<>>],
+         [<<>>, <<>>, <<>>],
+         [<<>>, <<>>, <<>>]],
+
+        %board = [["empty", "empty", "empty"],["empty", "empty", "empty"],["empty", "empty", "empty"]],
+        turn = <<"x">>,
         player_x = undefined,
         player_o = undefined
     },
     {ok, InitialState}.
+
 
 handle_call({join, PlayerPid}, _From, State = #game_state{player_x = undefined}) ->
     % First player joins as X
@@ -85,7 +88,7 @@ handle_cast(reset, State) ->
         %board = [[<<"">>, <<"">>, <<"">>], [<<"">>, <<"">>, <<"">>], [<<"">>, <<"">>, <<"">>]],
          board = [[<<>>, <<>>, <<>>], [<<>>, <<>>, <<>>], [<<>>, <<>>, <<>>]],
 
-        turn = "x",
+        turn = <<"x">>,
         player_x = undefined,
         player_o = undefined
     },
@@ -170,7 +173,7 @@ make_move_if_valid(Row, Col, Symbol, State = #game_state{board = Board}) ->
 
         io:format("Checking cell ~p at ~p,~p~n", [CurrentCell, Row, Col]),
 
-            NewTurn = case Symbol of "x" -> "o"; "o" -> "x" end,
+            NewTurn = case Symbol of <<"x">> -> <<"o">>; <<"o">> -> <<"x">> end,
             {ok, State#game_state{board = NewBoard, turn = NewTurn}}
     end.
 
@@ -181,7 +184,10 @@ check_game_result(Board) ->
     % Check rows
     case check_lines(Board) of
         {win, Symbol} -> 
-            case Symbol of "x" -> x_wins; "o" -> o_wins end;
+            case Symbol of
+                 <<"x">> -> x_wins;
+                 <<"o">> -> o_wins
+                 end;
         no_win ->
             % Check columns
             Columns = [[lists:nth(I, lists:nth(1, Board)), 
@@ -189,7 +195,10 @@ check_game_result(Board) ->
                        lists:nth(I, lists:nth(3, Board))] || I <- lists:seq(1, 3)],
             case check_lines(Columns) of
                 {win, Symbol} -> 
-                    case Symbol of "x" -> x_wins; "o" -> o_wins end;
+                    case Symbol of
+                         <<"x">> -> x_wins;
+                         <<"o">> -> o_wins
+                         end;
                 no_win ->
                     % Check diagonals
                     Diag1 = [lists:nth(1, lists:nth(1, Board)), 
@@ -200,7 +209,10 @@ check_game_result(Board) ->
                              lists:nth(1, lists:nth(3, Board))],
                     case check_lines([Diag1, Diag2]) of
                         {win, Symbol} -> 
-                            case Symbol of "x" -> x_wins; "o" -> o_wins end;
+                            case Symbol of
+                                <<"x">> -> x_wins;
+                                <<"o">> -> o_wins
+                             end;
                         no_win ->
                             % Check for draw
                             case is_board_full(Board) of
@@ -212,13 +224,13 @@ check_game_result(Board) ->
     end.
 
 check_lines(Lines) ->
-    case lists:filter(fun(Line) -> length(Line) == 3 andalso hd(Line) =/= "" andalso lists:all(fun(X) -> X == hd(Line) end, Line) end, Lines) of
+    case lists:filter(fun(Line) -> length(Line) == 3 andalso hd(Line) =/= <<>> andalso lists:all(fun(X) -> X == hd(Line) end, Line) end, Lines) of
         [] -> no_win;
         [Winner|_] -> {win, hd(Winner)}
     end.
 
 is_board_full(Board) ->
-    lists:all(fun(Row) -> lists:all(fun(Cell) -> Cell =/= "" end, Row) end, Board).
+    lists:all(fun(Row) -> lists:all(fun(Cell) -> Cell =/= <<>> end, Row) end, Board).
 
 notify_players(State = #game_state{player_x = PidX, player_o = PidO}) ->
     JsonState = jsone:encode(#{

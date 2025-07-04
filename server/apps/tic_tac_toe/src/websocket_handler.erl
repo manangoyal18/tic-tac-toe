@@ -2,39 +2,40 @@
 -behaviour(cowboy_websocket).
 
 -export([init/2]).
--export([websocket_init/1]).
+-export([websocket_init/3]).
 -export([websocket_handle/2]).
 -export([websocket_info/2]).
 -export([terminate/3]).
 
--include("tic_tac_toe.hrl").
+-include("tic_tac_toe.hrl").  
 
 init(Req, Opts) ->
     {cowboy_websocket, Req, Opts}.
 
-websocket_init(State) ->
+websocket_init(_TransportName, _Req, _Opts) ->
     case game_manager:new_player() of
         {ok, GamePid, Symbol} ->
             gen_server:call(GamePid, {join, self()}),
 
             JsonSymbol = jsone:encode(#{
                 <<"type">> => <<"assign_symbol">>,
-                <<"symbol">> => list_to_binary(Symbol)
+                <<"symbol">> => Symbol  % Already a binary
             }),
 
             {ok, GameState} = gen_server:call(GamePid, get_state),
             JsonState = jsone:encode(#{
                 <<"type">> => <<"game_state">>,
                 <<"board">> => GameState#game_state.board,
-                <<"turn">> => list_to_binary(GameState#game_state.turn)
+                <<"turn">> => GameState#game_state.turn  % Already a binary
             }),
 
             io:format("[websocket_handler] Assigned symbol ~p and sent initial state~n", [Symbol]),
-            {reply, [{text, JsonSymbol}, {text, JsonState}], {GamePid, Symbol}};
+            {[], #{idle_timeout => infinity}, {GamePid, Symbol}, [ {text, JsonSymbol}, {text, JsonState} ]}; 
 
+            
         {error, Reason} ->
             error_logger:error_msg("Failed to assign player: ~p", [Reason]),
-            {stop, State}
+            {stop, normal,undefined}
     end.
 
 websocket_handle({text, Msg}, {GamePid, Symbol} = State) ->
@@ -74,6 +75,11 @@ websocket_info({send, Msg}, State) ->
 websocket_info(_Info, State) ->
     {ok, State}.
 
-terminate(_Reason, _PartialReq, {GamePid, _Symbol}) ->
+terminate(_Reason, _PartialReq, _State = {GamePid, _Symbol}) when is_pid(GamePid) ->
+    io:format("Terminating connection for ~p~n", [GamePid]),
     gen_server:cast(GamePid, {player_disconnected, self()}),
+    ok;
+
+terminate(Reason, _PartialReq, State) ->
+    io:format("Unknown terminate state: ~p ~p~n", [Reason, State]),
     ok.
